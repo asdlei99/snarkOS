@@ -75,6 +75,8 @@ pub struct Validator<N: Network, C: ConsensusStorage<N>> {
     connected_committee_members: Arc<RwLock<HashMap<SocketAddr, PublicKey>>>,
     /// The running BFT consensus instance.
     bft: Arc<OnceCell<RunningConsensusInstance<BftExecutionState<N, C>>>>,
+    /// A flag indicating that the BFT initialization has already begun.
+    bft_started: Arc<AtomicBool>,
 
     dev: Option<u16>,
 }
@@ -134,6 +136,7 @@ impl<N: Network, C: ConsensusStorage<N>> Validator<N, C> {
             connected_committee_members: Default::default(),
             // Note: starting the BFT is called from the handshake logic once quorum is reached.
             bft: Default::default(),
+            bft_started: Default::default(),
             dev,
         };
 
@@ -209,6 +212,11 @@ impl<N: Network, C: ConsensusStorage<N>> Validator<N, C> {
 
     /// Starts and sets the `RunningConsensusInstance`.
     pub async fn start_bft(&self, initial_last_executed_sub_dag_index: u64) -> Result<()> {
+        // Return early if this method had already been called.
+        if self.bft_started.swap(true, Ordering::Relaxed) {
+            return Ok(());
+        }
+
         let dev = self.dev;
 
         // Prepare the path containing BFT consensus files.
