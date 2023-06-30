@@ -21,7 +21,7 @@ default = [ "parallel" ]
 metrics = ["snarkos-node-bft-consensus/metrics"]
 parallel = [ "rayon" ]
 timer = [ "aleo-std/timer" ]
-test = []
+test = [ "snarkos-node-router/test" ]
 
 [dependencies] # added for BFT
 narwhal-types.workspace = true
